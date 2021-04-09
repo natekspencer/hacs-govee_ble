@@ -9,7 +9,7 @@ from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
 
 from .attribute import Battery, Hygrometer, Thermometer
-from .helpers import decode_temps, twos_complement
+from .helpers import decode_temperature_and_humidity, twos_complement
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -109,9 +109,9 @@ class H5174(Device, Thermometer, Hygrometer, Battery):
 
         update_data = advertisement.manufacturer_data.get(1)
         if update_data and len(update_data) == 6:
-            packet = int(update_data[2:5].hex(), 16)
-            self._temperature = decode_temps(packet)
-            self._humidity = float((packet % 1000) / 10)
+            self._temperature, self._humidity = decode_temperature_and_humidity(
+                update_data[2:5]
+            )
             self._battery = int(update_data[5])
 
 

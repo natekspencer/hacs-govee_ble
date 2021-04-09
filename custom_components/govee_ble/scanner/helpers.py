@@ -2,13 +2,14 @@
 from typing import Optional
 
 
-def decode_temps(packet_value: int) -> float:
-    """Decode potential negative temperatures."""
-    # https://github.com/Thrilleratplay/GoveeWatcher/issues/2
-
+def decode_temperature_and_humidity(data_packet: bytes) -> tuple[float, float]:
+    # Adapted from: https://github.com/Thrilleratplay/GoveeWatcher/issues/2
+    packet_value = int(data_packet.hex(), 16)
+    multiplier = 1
     if packet_value & 0x800000:
-        return float((packet_value ^ 0x800000) / -10000)
-    return float(packet_value / 10000)
+        packet_value = packet_value ^ 0x800000
+        multiplier = -1
+    return float(packet_value / 10000 * multiplier), float(packet_value % 1000 / 10)
 
 
 def twos_complement(n: int, w: int = 16) -> int:
