@@ -1,10 +1,29 @@
 """Govee BLE Helpers."""
 from __future__ import annotations
 
+import logging
 from typing import Optional
+
+from bleak.backends.device import BLEDevice
+from bleak.backends.scanner import AdvertisementData
+
+_LOGGER = logging.getLogger(__name__)
+
+
+def get_govee_model(name: str) -> Optional[str]:
+    if not name:
+        return None
+    elif name.startswith(("ihoment_", "Govee_", "Minger_", "GBK_")):
+        split = name.split("_")
+        return split[1] if len(split) == 3 else None
+    elif name.startswith("GVH"):
+        split = name.split("_")
+        return split[0][2:] if len(split) > 1 else None
+    return None
 
 
 def decode_temperature_and_humidity(data_packet: bytes) -> tuple[float, float]:
+    """Decode the temperature and humidity values from a BLE advertisement data packet."""
     # Adapted from: https://github.com/Thrilleratplay/GoveeWatcher/issues/2
     packet_value = int(data_packet.hex(), 16)
     multiplier = 1
@@ -22,12 +41,14 @@ def twos_complement(n: int, w: int = 16) -> int:
     return n
 
 
-#
-# Reverse MAC octet order, return as a string
-#
-def reverse_mac(rmac: bytes) -> Optional[str]:
-    """Change Little Endian order to Big Endian."""
-    if len(rmac) != 6:
-        return None
-    macarr = [format(c, "02x") for c in list(reversed(rmac))]
-    return (":".join(macarr)).upper()
+def log_advertisement_message(
+    device: BLEDevice, advertisement: AdvertisementData
+) -> None:
+    """Log an advertisement message from a BLE device."""
+    if get_govee_model(device.name) and advertisement.manufacturer_data:
+        _LOGGER.debug(
+            "Advertisement message from %s (name=%s): %s",
+            device.address,
+            device.name,
+            {k: v.hex() for k, v in advertisement.manufacturer_data.items()},
+        )

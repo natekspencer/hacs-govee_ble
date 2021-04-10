@@ -9,6 +9,7 @@ from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
 
 from .device import Device, determine_known_device
+from .helpers import log_advertisement_message
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -45,6 +46,7 @@ class Scanner:
 
     async def start(self):
         def _callback(device: BLEDevice, advertisement: AdvertisementData):
+            log_advertisement_message(device, advertisement)
             known_device = self._known_devices.get(device.address)
             if known_device:
                 known_device.update(device=device, advertisement=advertisement)

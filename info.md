@@ -13,10 +13,20 @@
 
 A custom component for [Home Assistant][hass] that listens for the advertisement messages broadcast by Govee Bluetooth Low Energy devices.
 
-## Supported Devices
+## Supported Govee Devices
 
-- [Govee H5074][h5074]
-- [Govee H5174][h5174]
+- [H5051][h5051]
+- H5052
+- H5053
+- [H5071][h5071]
+- [H5072][h5072]
+- [H5074][h5074]
+- [H5075][h5075]
+- [H5101][h5101]
+- [H5102][h5102]
+- [H5174][h5174]
+- [H5177][h5177]
+- [H5179][h5179]
 
 **This component will set up the following platforms.**
 
@@ -35,15 +45,9 @@ A custom component for [Home Assistant][hass] that listens for the advertisement
 
 {% endif %}
 
-## Configuration is done in the UI
-
-<!---->
-
----
-
 ## Credits
 
-This was originally based on/shamelessly copied/inspired from [Home-Is-Where-You-Hang-Your-Hack/sensor.goveetemp_bt_hci][goveetemp_bt_hci] and [irremotus/govee][govee]
+This was originally based on/shamelessly copied/inspired from [Home-Is-Where-You-Hang-Your-Hack/sensor.goveetemp_bt_hci][goveetemp_bt_hci] and [irremotus/govee][govee]. These, as well as [asednev][govee-bt-client], were incredibly valuable resources for identifying packet data for sensors I don't own myself.
 
 ---
 
@@ -66,7 +70,22 @@ This was originally based on/shamelessly copied/inspired from [Home-Is-Where-You
 [releases]: https://github.com/natekspencer/hacs-govee_ble/releases
 [user_profile]: https://github.com/natekspencer
 [hass]: https://www.home-assistant.io
-[h5074]: https://www.amazon.com/Govee-Thermometer-Hygrometer-Bluetooth-Temperature/dp/B07R586J37
-[h5174]: https://www.amazon.com/Govee-Bluetooth-Hygrometer-Thermometer-Greenhouse/dp/B08JLNXLVZ
-[orgoveetemp_bt_hciigin]: https://github.com/Home-Is-Where-You-Hang-Your-Hack/sensor.goveetemp_bt_hci
+[//]: #
+[//]: # "Credits"
+[//]: #
+[goveetemp_bt_hci]: https://github.com/Home-Is-Where-You-Hang-Your-Hack/sensor.goveetemp_bt_hci
 [govee]: https://github.com/irremotus/govee
+[govee-bt-client]: https://github.com/asednev/govee-bt-client
+[//]: #
+[//]: # "Device links"
+[//]: #
+[h5051]: https://www.amazon.com/dp/B07FBCTQ3L
+[h5071]: https://www.amazon.com/dp/B07TWMSNH5
+[h5072]: https://www.amazon.com/dp/B07DWMJKP5
+[h5074]: https://www.amazon.com/dp/B07R586J37
+[h5075]: https://www.amazon.com/dp/B0872X4H4J
+[h5101]: https://www.amazon.com/dp/B08CGM8DC7
+[h5102]: https://www.amazon.com/dp/B087313N8F
+[h5174]: https://www.amazon.com/dp/B08JLNXLVZ
+[h5177]: https://www.amazon.com/dp/B08C9VYMHY
+[h5179]: https://www.amazon.com/dp/B0872ZWV8X

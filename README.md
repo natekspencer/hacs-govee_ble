@@ -13,6 +13,21 @@ Home Assistant integration for a Govee Bluetooth Low Energy (BLE) devices.
 [![Discord][discord-shield]][discord]
 [![Community Forum][forum-shield]][forum]
 
+## Supported Govee Devices
+
+- [H5051][h5051]
+- H5052
+- H5053
+- [H5071][h5071]
+- [H5072][h5072]
+- [H5074][h5074]
+- [H5075][h5075]
+- [H5101][h5101]
+- [H5102][h5102]
+- [H5174][h5174]
+- [H5177][h5177]
+- [H5179][h5179]
+
 **This component will set up the following platforms.**
 
 | Platform | Description                                                                                                              |
@@ -44,13 +59,23 @@ There are two main ways to install this custom component within your Home Assist
 
 While the manual installation above seems like less steps, it's important to note that you will not be able to see updates to this custom component unless you are subscribed to the watch list. You will then have to repeat each step in the process. By using HACS, you'll be able to see that an update is available and easily update the custom component.
 
-## Configuration is done in the UI
+## Debugging
 
-<!---->
+If one of your sensors is reporting incorrectly or you have a sensor that isn't showing up at all, you can enable debugging on the custom component by utilizing Home Assistant's built-in [logger][hass_logger]. Just add the following under the `logs` section in your `configuration.yaml` file:
+
+```yaml
+custom_components.govee_ble: debug
+```
+
+After restarting Home Assistant, go to the [logs][my_hass_logs], watch the output and consider [opening a new issue on GitHub](../../issues/new). Make sure you search for [open issues](../../issues) before reporting, just in case someone else has already encountered it.
 
 ## Contributions are welcome!
 
 If you want to contribute to this please read the [Contribution guidelines](CONTRIBUTING.md)
+
+## Credits
+
+This was originally based on/shamelessly copied/inspired from [Home-Is-Where-You-Hang-Your-Hack/sensor.goveetemp_bt_hci][goveetemp_bt_hci] and [irremotus/govee][govee]. These, as well as [asednev][govee-bt-client], were incredibly valuable resources for identifying packet data for sensors I don't own myself.
 
 ---
 
@@ -73,7 +98,24 @@ If you want to contribute to this please read the [Contribution guidelines](CONT
 [releases]: https://github.com/natekspencer/hacs-govee_ble/releases
 [user_profile]: https://github.com/natekspencer
 [hass]: https://www.home-assistant.io
-[h5074]: https://www.amazon.com/Govee-Thermometer-Hygrometer-Bluetooth-Temperature/dp/B07R586J37
-[h5174]: https://www.amazon.com/Govee-Bluetooth-Hygrometer-Thermometer-Greenhouse/dp/B08JLNXLVZ
-[orgoveetemp_bt_hciigin]: https://github.com/Home-Is-Where-You-Hang-Your-Hack/sensor.goveetemp_bt_hci
+[hass_logger]: https://www.home-assistant.io/integrations/logger/
+[my_hass_logs]: https://my.home-assistant.io/redirect/logs/
+[//]: #
+[//]: # "Credits"
+[//]: #
+[goveetemp_bt_hci]: https://github.com/Home-Is-Where-You-Hang-Your-Hack/sensor.goveetemp_bt_hci
 [govee]: https://github.com/irremotus/govee
+[govee-bt-client]: https://github.com/asednev/govee-bt-client
+[//]: #
+[//]: # "Device links"
+[//]: #
+[h5051]: https://www.amazon.com/dp/B07FBCTQ3L
+[h5071]: https://www.amazon.com/dp/B07TWMSNH5
+[h5072]: https://www.amazon.com/dp/B07DWMJKP5
+[h5074]: https://www.amazon.com/dp/B07R586J37
+[h5075]: https://www.amazon.com/dp/B0872X4H4J
+[h5101]: https://www.amazon.com/dp/B08CGM8DC7
+[h5102]: https://www.amazon.com/dp/B087313N8F
+[h5174]: https://www.amazon.com/dp/B08JLNXLVZ
+[h5177]: https://www.amazon.com/dp/B08C9VYMHY
+[h5179]: https://www.amazon.com/dp/B0872ZWV8X

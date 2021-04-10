@@ -5,17 +5,20 @@ import logging
 from typing import Any, Callable
 
 from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
+from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     DEVICE_CLASS_BATTERY,
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_TEMPERATURE,
     PERCENTAGE,
+    PRECISION_TENTHS,
     TEMP_CELSIUS,
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity
+from homeassistant.helpers.temperature import display_temp
 
 from .const import DATA_UNSUBSCRIBE, DOMAIN
 from .helpers import get_scanner
@@ -26,7 +29,7 @@ from .scanner.device import Device
 _LOGGER = logging.getLogger(__name__)
 
 
-class BleSensor(Entity):
+class BleSensor(SensorEntity):
     def __init__(self, scanner: Scanner, device: Device) -> None:
         self._scanner = scanner
         self._device = device
@@ -108,12 +111,14 @@ class TemperatureSensor(BleSensor):
     @property
     def state(self):
         """Return the state of the sensor."""
-        return self._device.temperature
+        return display_temp(
+            self.hass, self._device.temperature, TEMP_CELSIUS, PRECISION_TENTHS
+        )
 
     @property
     def unit_of_measurement(self) -> str:
         """Return the unit of measurement."""
-        return TEMP_CELSIUS
+        return self.hass.config.units.temperature_unit
 
     @property
     def device_class(self):
