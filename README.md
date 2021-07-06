@@ -63,20 +63,22 @@ While the manual installation above seems like less steps, it's important to not
 
 There is a config flow for this integration. After installing the custom component and restarting Home Assistant:
 
-1. Go to **Configuration**->**Integrations**
+1. Go to **Configuration** -> **Integrations**
 2. Click **+ ADD INTEGRATION** to setup a new integration
 3. Search for **Govee BLE** and click on it
 4. You will be guided through the rest of the setup process via the config flow
 
 ## Debugging
 
-If one of your sensors is reporting incorrectly or you have a sensor that isn't showing up at all, you can enable debugging on the custom component by utilizing Home Assistant's built-in [logger][hass_logger]. Just add the following under the `logs` section in your `configuration.yaml` file:
+If one of your sensors is reporting incorrectly or you have a sensor that isn't showing up at all, you can enable debugging on the custom component by utilizing Home Assistant's built-in [logger][hass_logger]. Just add the following entry under the `logs` section in your `configuration.yaml` file:
 
 ```yaml
 custom_components.govee_ble: debug
 ```
 
 After restarting Home Assistant, go to the [logs][my_hass_logs], watch the output and consider [opening a new issue on GitHub](../../issues/new). Make sure you search for [open issues](../../issues) before reporting, just in case someone else has already encountered it.
+
+Because of the number of Bluetooth devices that may be within range and to limit the number of log entries, only devices that advertise their name and start with **ihoment\_**, **Govee\_**, **Minger\_**, **GBK\_** or **GVH** will be logged. This is the same way the Govee app currently determines supported devices, so it may change as new devices are released. If you have a Govee device that doesn't match this pattern, please [open an issue on GitHub](../../issues/new) and include the name of your Govee device that is being advertised so it can be added to the logic.
 
 ## Contributions are welcome!
 

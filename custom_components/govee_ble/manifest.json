@@ -4,7 +4,7 @@
   "documentation": "https://github.com/natekspencer/hacs-govee_ble",
   "issue_tracker": "https://github.com/natekspencer/hacs-govee_ble/issues",
   "dependencies": [],
-  "version": "2021.4.2",
+  "version": "2021.7.0",
   "config_flow": true,
   "codeowners": ["@natekspencer"],
   "requirements": ["bleak==0.11.0"]

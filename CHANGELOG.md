@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2021.7.0
+
+- Fix for H5179 missing from valid classes
+
 ## 2021.4.2
 
 - Add compatibility for more sensors
