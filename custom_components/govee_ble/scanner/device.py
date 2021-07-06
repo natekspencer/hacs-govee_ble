@@ -185,7 +185,7 @@ class H51TH(ThermoHygrometerEncoded):
     OFFSET = 2
 
 
-VALID_CLASSES: set[Type[Device]] = {H50TH, H507TH, H51TH}
+VALID_CLASSES: set[Type[Device]] = {H50TH, H507TH, H51TH, H5179}
 MODEL_MAP = {model: cls for cls in VALID_CLASSES for model in cls.SUPPORTED_MODELS}
 
 
