@@ -17,7 +17,6 @@ A custom component for [Home Assistant][hass] that listens for the advertisement
 
 - [H5051][h5051]
 - H5052
-- H5053
 - [H5071][h5071]
 - [H5072][h5072]
 - [H5074][h5074]

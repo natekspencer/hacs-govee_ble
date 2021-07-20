@@ -119,12 +119,11 @@ class H50TH(ThermoHygrometerPacked):
     Supported Models:
     - H5051
     - H5052
-    - H5053
     - H5071
     - H5074
     """
 
-    SUPPORTED_MODELS = {"H5051", "H5052", "H5053", "H5071", "H5074"}
+    SUPPORTED_MODELS = {"H5051", "H5052", "H5071", "H5074"}
     MANUFACTURER_DATA_KEY = 60552  # EC88
     OFFSET = 1
 
