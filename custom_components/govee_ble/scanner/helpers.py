@@ -1,7 +1,9 @@
 """Govee BLE Helpers."""
 from __future__ import annotations
 
+import functools
 import logging
+import operator
 from typing import Optional
 
 from bleak.backends.device import BLEDevice
@@ -11,6 +13,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def get_govee_model(name: str) -> Optional[str]:
+    """Determine the model name of a Govee device."""
     if not name:
         return None
     elif name.startswith(("ihoment_", "Govee_", "Minger_", "GBK_")):
@@ -41,14 +44,26 @@ def twos_complement(n: int, w: int = 16) -> int:
     return n
 
 
+def calculate_checksum(data: bytes) -> int:
+    """Calculate the checksum of a bytes object."""
+    return functools.reduce(operator.xor, data)
+
+
+def command_with_checksum(hex_string: str, length: int = 40) -> bytes:
+    """Return a command with the checksum appended."""
+    return bytes.fromhex(
+        f"{str.ljust(hex_string,length-2,'0')}{calculate_checksum(bytes.fromhex(hex_string)):02x}"
+    )
+
+
 def log_advertisement_message(
     device: BLEDevice, advertisement: AdvertisementData
 ) -> None:
     """Log an advertisement message from a BLE device."""
-    if get_govee_model(device.name) and advertisement.manufacturer_data:
+    if get_govee_model(device.name) and advertisement.manufacturer_data is not None:
         _LOGGER.debug(
-            "Advertisement message from %s (name=%s): %s",
-            device.address,
+            "Advertisement message from %s (%s): %s",
             device.name,
+            device.address,
             {k: v.hex() for k, v in advertisement.manufacturer_data.items()},
         )

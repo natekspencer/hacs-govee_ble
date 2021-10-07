@@ -10,5 +10,18 @@
     "abort": {
       "single_instance_allowed": "Already configured. Only a single configuration possible."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "description": "Exclude devices - a comma-separated list of Bluetooth (or UUID, if macOS) addresses to ignore.\n\nKeep controllable device connections alive - allows for real-time device control via Home Assistant, but prevents connection to devices via the \"Govee Home\" app unless you disable this option, integration or the individual devices first.",
+        "data": {
+          "exclude_devices": "Exclude devices",
+          "log_advertisements": "Log advertisement messages",
+          "log_notifications": "Log device notifications",
+          "keep_alive": "(experimental) Keep controllable device connections alive"
+        }
+      }
+    }
   }
 }

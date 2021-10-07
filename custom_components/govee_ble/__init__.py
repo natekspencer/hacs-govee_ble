@@ -3,27 +3,34 @@ import asyncio
 import logging
 
 from bleak.exc import BleakError
-from custom_components.govee_ble.scanner.device import Device
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import device_registry
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 
-from .const import DATA_UNSUBSCRIBE, DOMAIN, EVENT_DEVICE_ADDED_TO_REGISTRY
-from .helpers import get_scanner
+from .const import (
+    CONF_EXCLUDE_DEVICES,
+    CONF_LOG_ADVERTISEMENTS,
+    DATA_UNSUBSCRIBE,
+    DEFAULT_EXCLUDE_DEVICES,
+    DEFAULT_LOG_ADVERTISEMENTS,
+    DOMAIN,
+    EVENT_DEVICE_ADDED_TO_REGISTRY,
+)
+from .helpers import get_scanner, string_to_list
 from .scanner import DEVICE_DISCOVERED
+from .scanner.device import Device, MulticoloredLight
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = ["sensor"]
+PLATFORMS = ["light", "sensor", "switch"]
 DATA_START_PLATFORM_TASK = "start_platform_task"
 
 
 async def async_setup(hass: HomeAssistant, config: dict):
-    """Set up the Govee Thermometer/Humidity BLE component."""
+    """Set up the Govee BLE component."""
     hass.data.setdefault(DOMAIN, {})
-
     return True
 
 
@@ -43,17 +50,32 @@ def register_device(
         "manufacturer": "Govee",
     }
     device = dev_reg.async_get_or_create(**params)
-
     async_dispatcher_send(hass, EVENT_DEVICE_ADDED_TO_REGISTRY, device)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
-    """Set up Govee Thermometer/Humidity BLE from a config entry."""
+    """Set up Govee BLE from a config entry."""
     hass.data[DOMAIN].setdefault(entry.entry_id, {})
     hass.data[DOMAIN][entry.entry_id].setdefault(DATA_UNSUBSCRIBE, [])
 
+    _, exclude_devices = string_to_list(
+        entry.options.get(CONF_EXCLUDE_DEVICES, DEFAULT_EXCLUDE_DEVICES)
+    )
+
     scanner = await get_scanner(hass, entry)
-    dev_reg = await device_registry.async_get_registry(hass)
+    scanner.ignored_addresses = exclude_devices
+
+    dev_reg = device_registry.async_get(hass)
+
+    if exclude_devices:
+        # Devices that are in the device registry that are ignored by the integration can be removed
+        stored_devices = device_registry.async_entries_for_config_entry(
+            dev_reg, entry.entry_id
+        )
+        ignored_devices = [{(DOMAIN, address)} for address in exclude_devices]
+        for device in stored_devices:
+            if device.identifiers in ignored_devices:
+                dev_reg.async_remove_device(device.id)
 
     @callback
     def async_on_device_discovered(device: Device) -> None:
@@ -62,6 +84,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         # register (or update) device in device registry
         register_device(hass, entry, dev_reg, device)
+
+        if isinstance(device, MulticoloredLight):
+            async_dispatcher_send(
+                hass,
+                f"{DOMAIN}_{entry.entry_id}_add_light",
+                device,
+            )
 
         async_dispatcher_send(
             hass,
@@ -84,11 +113,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             DEVICE_DISCOVERED, lambda event: async_on_device_discovered(event["device"])
         )
 
+        log_advertisements = entry.options.get(
+            CONF_LOG_ADVERTISEMENTS, DEFAULT_LOG_ADVERTISEMENTS
+        )
+
         try:
-            await scanner.start()
+            await scanner.start(log_advertisements=log_advertisements)
         except BleakError as ex:
-            _LOGGER.debug("Cancelling start platforms")
-            raise ConfigEntryNotReady from ex
+            _LOGGER.error("Cancelling start platforms: %s", ex)
+        # except Exception as ex:
+        #     _LOGGER.exception("Unexpected exception: %s", ex)
 
     platform_task = hass.async_create_task(start_platforms())
     hass.data[DOMAIN][entry.entry_id][DATA_START_PLATFORM_TASK] = platform_task
@@ -98,7 +132,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Unload a config entry."""
+    info = hass.data[DOMAIN].get(entry.entry_id, None)
+    if not info:
+        return True
+
     scanner = await get_scanner(hass, entry)
+    devices_stopped = all(
+        await asyncio.gather(
+            *[
+                device.disconnect()
+                for device in scanner.known_devices
+                if isinstance(device, MulticoloredLight)
+            ]
+        )
+    )
     await scanner.stop()
 
     unload_ok = all(
@@ -110,10 +157,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
         )
     )
 
-    if not unload_ok:
-        return False
-
-    info = hass.data[DOMAIN].pop(entry.entry_id)
+    hass.data[DOMAIN].pop(entry.entry_id)
 
     platform_task: asyncio.Task = info[DATA_START_PLATFORM_TASK]
     platform_task.cancel()
@@ -122,4 +166,4 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     for unsub in info[DATA_UNSUBSCRIBE]:
         unsub()
 
-    return True
+    return devices_stopped and unload_ok

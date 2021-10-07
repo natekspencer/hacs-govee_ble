@@ -2,10 +2,9 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable
+from typing import Callable
 
-from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN, SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     DEVICE_CLASS_BATTERY,
@@ -29,10 +28,33 @@ from .scanner.device import Device
 _LOGGER = logging.getLogger(__name__)
 
 
+# class ScannerSensor(SensorEntity):
+#     """Sensor representing the scanner."""
+
+#     def __init__(self, scanner: Scanner) -> None:
+#         """Initialize the sensor."""
+#         self._scanner = scanner
+#         self._attr_device_class = "timestamp"
+#         self._attr_device_info = {
+#             "identifiers": {(DOMAIN, "scanner")},
+#             "name": "Scanner",
+#         }
+#         self._attr_name = "Scanner"
+#         self._attr_should_poll = True
+#         self._attr_unique_id = f"{DOMAIN}.scanner"
+
+#     @property
+#     def native_value(self):
+#         if self._scanner.last_advertisement_received:
+#             return self._scanner.last_advertisement_received.isoformat()
+#         return None
+
+
 class BleSensor(SensorEntity):
     def __init__(self, scanner: Scanner, device: Device) -> None:
         self._scanner = scanner
         self._device = device
+        self._attr_device_info = {"identifiers": {(DOMAIN, self._device.address)}}
 
     @property
     def name(self) -> str:
@@ -49,26 +71,20 @@ class BleSensor(SensorEntity):
         """Force update."""
         return True
 
-    @property
-    def device_info(self) -> dict[str, Any]:
-        """Return the device information for this entity."""
-        # device is precreated in main handler
-        return {"identifiers": {(DOMAIN, self._device.address)}}
-
     async def async_added_to_hass(self) -> None:
         """Set up a listener for the entity."""
+
+        @callback
+        def _update_callback(_: Device) -> None:
+            """Call from dispatcher when state changes."""
+            self.async_schedule_update_ha_state(force_refresh=True)
+
         self.async_on_remove(
             self._scanner.on(
                 self._device.address,
-                lambda event: self._update_callback(event["device"]),
+                lambda event: _update_callback(event["device"]),
             )
         )
-
-    @callback
-    def _update_callback(self, device: Device) -> None:
-        """Call from dispatcher when state changes."""
-        self._device = device
-        self.async_schedule_update_ha_state(force_refresh=True)
 
 
 class AddressSensor(BleSensor):
@@ -204,7 +220,7 @@ async def async_setup_entry(
     def async_add_sensor(device: Device) -> None:
         """Add BLE Sensor."""
         entities: list[BleSensor] = []
-        _LOGGER.debug("adding sensors for %s", device)
+        _LOGGER.debug("Adding sensors for %s", device)
 
         for sensor_class, attribute in GOVEE_SENSORS:
             if isinstance(device, attribute):
@@ -219,3 +235,5 @@ async def async_setup_entry(
             async_add_sensor,
         )
     )
+
+    # async_add_entities([ScannerSensor(scanner=scanner)], True)

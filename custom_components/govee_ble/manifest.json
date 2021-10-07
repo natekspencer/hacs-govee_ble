@@ -4,8 +4,10 @@
   "documentation": "https://github.com/natekspencer/hacs-govee_ble",
   "issue_tracker": "https://github.com/natekspencer/hacs-govee_ble/issues",
   "dependencies": [],
-  "version": "2021.7.1",
+  "version": "2021.10.0",
   "config_flow": true,
   "codeowners": ["@natekspencer"],
-  "requirements": ["bleak==0.11.0"]
+  "requirements": [
+    "git+https://github.com/hbldh/bleak.git@develop#bleak==1.0.0"
+  ]
 }
