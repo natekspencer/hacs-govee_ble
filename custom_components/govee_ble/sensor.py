@@ -1,26 +1,25 @@
 """Support for Govee BLE sensors."""
 from __future__ import annotations
 
+from dataclasses import dataclass
 import logging
-from typing import Any, Callable
 
-from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
-from homeassistant.components.sensor import SensorEntity
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (
-    DEVICE_CLASS_BATTERY,
-    DEVICE_CLASS_HUMIDITY,
-    DEVICE_CLASS_TEMPERATURE,
-    PERCENTAGE,
-    PRECISION_TENTHS,
-    TEMP_CELSIUS,
+from homeassistant.components.sensor import (
+    DOMAIN as SENSOR_DOMAIN,
+    SensorDeviceClass,
+    SensorEntity,
+    SensorEntityDescription,
+    SensorStateClass,
 )
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import PERCENTAGE, TEMP_CELSIUS
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from homeassistant.helpers.entity import Entity
-from homeassistant.helpers.temperature import display_temp
+from homeassistant.helpers.entity import DeviceInfo, EntityCategory
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.typing import StateType
 
-from .const import DATA_UNSUBSCRIBE, DOMAIN
+from .const import DOMAIN
 from .helpers import get_scanner
 from .scanner import Scanner
 from .scanner.attribute import Attribute, Battery, Hygrometer, Thermometer
@@ -29,31 +28,74 @@ from .scanner.device import Device
 _LOGGER = logging.getLogger(__name__)
 
 
-class BleSensor(SensorEntity):
-    def __init__(self, scanner: Scanner, device: Device) -> None:
+@dataclass
+class GoveeBleSensorEntityDescription(SensorEntityDescription):
+    """A class that describes Govee BLE sensor entities."""
+
+    attribute: Attribute | None = None
+
+
+GOVEE_SENSORS: tuple[GoveeBleSensorEntityDescription, ...] = (
+    GoveeBleSensorEntityDescription(
+        key="address",
+        name="Address",
+        icon="mdi:bluetooth",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        attribute=Device,
+    ),
+    GoveeBleSensorEntityDescription(
+        key="temperature",
+        name="Temperature",
+        native_unit_of_measurement=TEMP_CELSIUS,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+        attribute=Thermometer,
+    ),
+    GoveeBleSensorEntityDescription(
+        key="humidity",
+        name="Humidity",
+        native_unit_of_measurement=PERCENTAGE,
+        device_class=SensorDeviceClass.HUMIDITY,
+        state_class=SensorStateClass.MEASUREMENT,
+        attribute=Hygrometer,
+    ),
+    GoveeBleSensorEntityDescription(
+        key="battery",
+        name="Battery",
+        native_unit_of_measurement=PERCENTAGE,
+        device_class=SensorDeviceClass.BATTERY,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        attribute=Battery,
+    ),
+)
+
+
+class GoveeBleSensorEntity(SensorEntity):
+    """Govee Ble sensor entity."""
+
+    _attr_should_poll = False
+    _attr_force_update = False
+
+    def __init__(
+        self,
+        scanner: Scanner,
+        device: Device,
+        entity_description: SensorEntityDescription,
+    ) -> None:
+        """Initialize a Govee BLE sensor entity."""
         self._scanner = scanner
         self._device = device
+        self.entity_description = entity_description
+
+        self._attr_name = f"{device.name} {entity_description.name}"
+        self._attr_unique_id = f"{device.address}.{entity_description.key}"
+        self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, device.address)})
 
     @property
-    def name(self) -> str:
-        """Return the name of the sensor."""
-        return self._device.name
-
-    @property
-    def should_poll(self) -> bool:
-        """No polling needed."""
-        return False
-
-    @property
-    def force_update(self) -> bool:
-        """Force update."""
-        return True
-
-    @property
-    def device_info(self) -> dict[str, Any]:
-        """Return the device information for this entity."""
-        # device is precreated in main handler
-        return {"identifiers": {(DOMAIN, self._device.address)}}
+    def native_value(self) -> StateType:
+        """Return the value reported by the sensor."""
+        return getattr(self._device, self.entity_description.key, None)
 
     async def async_added_to_hass(self) -> None:
         """Set up a listener for the entity."""
@@ -68,134 +110,13 @@ class BleSensor(SensorEntity):
     def _update_callback(self, device: Device) -> None:
         """Call from dispatcher when state changes."""
         self._device = device
-        self.async_schedule_update_ha_state(force_refresh=True)
-
-
-class AddressSensor(BleSensor):
-    """Govee BLE Address Sensor"""
-
-    @property
-    def name(self) -> str:
-        """Return the name of the sensor."""
-        return f"{super().name} Address"
-
-    @property
-    def unique_id(self) -> str:
-        """Return unique id for this entity."""
-        return f"{self._device.address}.address"
-
-    @property
-    def state(self):
-        """Return the state of the sensor."""
-        return self._device.address
-
-    @property
-    def icon(self):
-        """Return the icon for this sensor."""
-        return "mdi:bluetooth"
-
-
-class TemperatureSensor(BleSensor):
-    """Govee BLE temperature sensor."""
-
-    @property
-    def name(self) -> str:
-        """Return the name of the sensor."""
-        return f"{super().name} Temperature"
-
-    @property
-    def unique_id(self) -> str:
-        """Return unique id for this entity."""
-        return f"{self._device.address}.temperature"
-
-    @property
-    def state(self):
-        """Return the state of the sensor."""
-        return display_temp(
-            self.hass, self._device.temperature, TEMP_CELSIUS, PRECISION_TENTHS
-        )
-
-    @property
-    def unit_of_measurement(self) -> str:
-        """Return the unit of measurement."""
-        return self.hass.config.units.temperature_unit
-
-    @property
-    def device_class(self):
-        """Return the unit of measurement."""
-        return DEVICE_CLASS_TEMPERATURE
-
-
-class HumiditySensor(BleSensor):
-    """Govee BLE humidity sensor."""
-
-    @property
-    def name(self) -> str:
-        """Return the name of the sensor."""
-        return f"{super().name} Humidity"
-
-    @property
-    def unique_id(self) -> str:
-        """Return unique id for this entity."""
-        return f"{self._device.address}.humidity"
-
-    @property
-    def state(self):
-        """Return the state of the sensor."""
-        return self._device.humidity
-
-    @property
-    def unit_of_measurement(self) -> str:
-        """Return the unit of measurement."""
-        return PERCENTAGE
-
-    @property
-    def device_class(self):
-        """Return the unit of measurement."""
-        return DEVICE_CLASS_HUMIDITY
-
-
-class BatterySensor(BleSensor):
-    """Govee BLE battery sensor."""
-
-    @property
-    def name(self) -> str:
-        """Return the name of the sensor."""
-        return f"{super().name} Battery"
-
-    @property
-    def unique_id(self) -> str:
-        """Return unique id for this entity."""
-        return f"{self._device.address}.battery"
-
-    @property
-    def state(self):
-        """Return the state of the sensor."""
-        return self._device.battery
-
-    @property
-    def unit_of_measurement(self) -> str:
-        """Return the unit of measurement."""
-        return PERCENTAGE
-
-    @property
-    def device_class(self):
-        """Return the unit of measurement."""
-        return DEVICE_CLASS_BATTERY
-
-
-GOVEE_SENSORS: list[tuple[BleSensor, Attribute]] = [
-    (AddressSensor, Device),
-    (TemperatureSensor, Thermometer),
-    (HumiditySensor, Hygrometer),
-    (BatterySensor, Battery),
-]
+        self.async_schedule_update_ha_state()
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    async_add_entities: Callable[[list[Entity], bool], None],
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Govee BLE sensors using config entry."""
     scanner = await get_scanner(hass, entry)
@@ -203,16 +124,18 @@ async def async_setup_entry(
     @callback
     def async_add_sensor(device: Device) -> None:
         """Add BLE Sensor."""
-        entities: list[BleSensor] = []
-        _LOGGER.debug("adding sensors for %s", device)
+        _LOGGER.debug("Adding sensors for %s", device)
+        async_add_entities(
+            [
+                GoveeBleSensorEntity(
+                    scanner=scanner, device=device, entity_description=sensor
+                )
+                for sensor in GOVEE_SENSORS
+                if isinstance(device, sensor.attribute)
+            ]
+        )
 
-        for sensor_class, attribute in GOVEE_SENSORS:
-            if isinstance(device, attribute):
-                entities.append(sensor_class(scanner=scanner, device=device))
-
-        async_add_entities(entities)
-
-    hass.data[DOMAIN][entry.entry_id][DATA_UNSUBSCRIBE].append(
+    entry.async_on_unload(
         async_dispatcher_connect(
             hass,
             f"{DOMAIN}_{entry.entry_id}_add_{SENSOR_DOMAIN}",
