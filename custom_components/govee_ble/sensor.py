@@ -6,16 +6,14 @@ import logging
 
 from homeassistant.components.sensor import (
     DOMAIN as SENSOR_DOMAIN,
-    SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
-    SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import PERCENTAGE, TEMP_CELSIUS
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from homeassistant.helpers.entity import DeviceInfo, EntityCategory
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
 
@@ -40,32 +38,32 @@ GOVEE_SENSORS: tuple[GoveeBleSensorEntityDescription, ...] = (
         key="address",
         name="Address",
         icon="mdi:bluetooth",
-        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_category="diagnostic",
         attribute=Device,
     ),
     GoveeBleSensorEntityDescription(
         key="temperature",
         name="Temperature",
         native_unit_of_measurement=TEMP_CELSIUS,
-        device_class=SensorDeviceClass.TEMPERATURE,
-        state_class=SensorStateClass.MEASUREMENT,
+        device_class="temperature",
+        state_class="measurement",
         attribute=Thermometer,
     ),
     GoveeBleSensorEntityDescription(
         key="humidity",
         name="Humidity",
         native_unit_of_measurement=PERCENTAGE,
-        device_class=SensorDeviceClass.HUMIDITY,
-        state_class=SensorStateClass.MEASUREMENT,
+        device_class="humidity",
+        state_class="measurement",
         attribute=Hygrometer,
     ),
     GoveeBleSensorEntityDescription(
         key="battery",
         name="Battery",
         native_unit_of_measurement=PERCENTAGE,
-        device_class=SensorDeviceClass.BATTERY,
-        state_class=SensorStateClass.MEASUREMENT,
-        entity_category=EntityCategory.DIAGNOSTIC,
+        device_class="battery",
+        state_class="measurement",
+        entity_category="diagnostic",
         attribute=Battery,
     ),
 )
