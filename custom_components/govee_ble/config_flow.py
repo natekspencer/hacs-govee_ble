@@ -1,7 +1,10 @@
 """Adds config flow for Govee BLE."""
+from __future__ import annotations
+
+import voluptuous as vol
+
 from homeassistant import config_entries
 from homeassistant.const import CONF_NAME
-import voluptuous as vol
 
 from .const import DOMAIN
 

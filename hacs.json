@@ -1,6 +1,6 @@
 {
   "name": "Govee BLE",
-  "render_readme": true,
   "domains": "sensor",
-  "iot_class": "Local Push"
+  "iot_class": "Local Push",
+  "homeassistant": "2021.12.0b0"
 }

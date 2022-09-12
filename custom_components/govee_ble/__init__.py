@@ -1,30 +1,27 @@
 """Govee Thermometer/Humidity BLE HCI monitor sensor integration."""
+from __future__ import annotations
+
 import asyncio
 import logging
 
 from bleak.exc import BleakError
-from custom_components.govee_ble.scanner.device import Device
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import device_registry
 from homeassistant.helpers.dispatcher import async_dispatcher_send
+from homeassistant.helpers.entity import DeviceInfo
 
-from .const import DATA_UNSUBSCRIBE, DOMAIN, EVENT_DEVICE_ADDED_TO_REGISTRY
+from .const import DOMAIN, EVENT_DEVICE_ADDED_TO_REGISTRY
 from .helpers import get_scanner
 from .scanner import DEVICE_DISCOVERED
+from .scanner.device import Device
 
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = ["sensor"]
 DATA_START_PLATFORM_TASK = "start_platform_task"
-
-
-async def async_setup(hass: HomeAssistant, config: dict):
-    """Set up the Govee Thermometer/Humidity BLE component."""
-    hass.data.setdefault(DOMAIN, {})
-
-    return True
 
 
 @callback
@@ -35,22 +32,21 @@ def register_device(
     device: Device,
 ) -> None:
     """Register device in device registry."""
-    params = {
-        "config_entry_id": entry.entry_id,
-        "identifiers": {(DOMAIN, device.address)},
-        "name": device.name,
-        "model": device.model,
-        "manufacturer": "Govee",
-    }
-    device = dev_reg.async_get_or_create(**params)
+    params = DeviceInfo(
+        identifiers={(DOMAIN, device.address)},
+        name=device.name,
+        model=device.model,
+        manufacturer="Govee",
+    )
+
+    device = dev_reg.async_get_or_create(config_entry_id=entry.entry_id, **params)
 
     async_dispatcher_send(hass, EVENT_DEVICE_ADDED_TO_REGISTRY, device)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Set up Govee Thermometer/Humidity BLE from a config entry."""
-    hass.data[DOMAIN].setdefault(entry.entry_id, {})
-    hass.data[DOMAIN][entry.entry_id].setdefault(DATA_UNSUBSCRIBE, [])
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {}
 
     scanner = await get_scanner(hass, entry)
     dev_reg = await device_registry.async_get_registry(hass)
@@ -118,8 +114,5 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     platform_task: asyncio.Task = info[DATA_START_PLATFORM_TASK]
     platform_task.cancel()
     await platform_task
-
-    for unsub in info[DATA_UNSUBSCRIBE]:
-        unsub()
 
     return True
